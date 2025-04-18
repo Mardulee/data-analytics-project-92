@@ -13,27 +13,16 @@ ORDER BY sum(p.price * s.quantity) DESC
 LIMIT 10;
 -- проект 1_задание 5_часть 1 : Запрос конкатенирует имя и фамилию продавцов в 1 записи (топ-10 по выручке), выводит кол-во продаж и общую выручку на каждого продавца
 
-WITH seller_income AS (
-                       SELECT
-                             CONCAT(TRIM(e.first_name), ' ', TRIM(e.last_name)) AS seller,
-                             AVG(s.quantity * p.price) AS average_income
-                       FROM sales s
-                       JOIN employees e ON s.sales_person_id = e.employee_id
-                       JOIN products p ON s.product_id = p.product_id
-                       GROUP BY seller
-                      ),
-     overall_average AS (
-                       SELECT AVG(quantity * price) AS global_avg_income
-                       FROM sales s
-                       JOIN products p ON s.product_id = p.product_id
-                        )
-SELECT
-  si.seller,
-  Floor(si.average_income) AS average_income
-FROM seller_income si,
-     overall_average oa
-WHERE si.average_income < oa.global_avg_income
-ORDER BY average_income ASC;
+SELECT CONCAT(TRIM(e.first_name), ' ', TRIM(e.last_name)) AS seller,
+       floor(AVG(s.quantity * p.price)) AS average_income
+FROM sales s
+JOIN employees e ON s.sales_person_id = e.employee_id
+JOIN products p ON s.product_id = p.product_id
+GROUP BY seller
+HAVING AVG(s.quantity * p.price) < (SELECT AVG(quantity * price) AS global_avg_income
+                                    FROM sales s
+                                    JOIN products p ON s.product_id = p.product_id) 
+ORDER BY AVG(s.quantity * p.price) asc;
 -- проект 1_задание 5_часть 2 : Выводим 2 оконные функции со всеми продавцами и их средней выручкой по сделке, и оконная функция со средней выручкой по сделке в целом. Далее выводим имя и фам продавца со средней выручкой по 1 сделке, которая меньше средней выручки по рынку/магазину в целом. 
 
 SELECT
@@ -54,26 +43,15 @@ ORDER BY
 
 
 
-WITH categorized_users AS (
-SELECT customer_id,
+SELECT 
 CASE
 WHEN age BETWEEN 16 AND 25 THEN '16-25'
 WHEN age BETWEEN 26 AND 40 THEN '26-40'
 WHEN age > 40 THEN '40+'
-END AS age_category
+END AS age_category,
+COUNT(distinct (customer_id)) AS age_count 
 FROM customers
-WHERE age >= 16
-)
-SELECT age_category, COUNT(distinct (customer_id)) AS age_count
-FROM categorized_users
-GROUP BY age_category
-ORDER BY
-CASE age_category
-WHEN '16-25' THEN 1
-WHEN '26-40' THEN 2
-WHEN '40+' THEN 3
-ELSE 4
-END;
+GROUP BY age_category;
 -- проект 1_задание 6_часть 1 : Вспомогательный подзапрос классифицирует всех покупателей в БД customers по возрастным категориям, далее выводим таблицу с кол-вом уникальных покупателей по каждой возрастной категории
 
 
