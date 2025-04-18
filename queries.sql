@@ -29,7 +29,7 @@ WITH seller_income AS (
                         )
 SELECT
   si.seller,
-  ROUND(si.average_income)::int AS average_income
+  Floor(si.average_income) AS average_income
 FROM seller_income si,
      overall_average oa
 WHERE si.average_income < oa.global_avg_income
@@ -38,7 +38,7 @@ ORDER BY average_income ASC;
 
 SELECT
   CONCAT(TRIM(e.first_name), ' ', TRIM(e.last_name)) AS seller,
-  TO_CHAR(s.sale_date, 'Day') AS day_of_week,
+  lower(TO_CHAR(s.sale_date, 'Day')) AS day_of_week,
   floor(SUM(p.price * s.quantity)) AS income
 FROM sales s
 JOIN employees e ON s.sales_person_id = e.employee_id
