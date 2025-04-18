@@ -80,7 +80,7 @@ END;
 SELECT
 TO_CHAR(s.sale_date, 'YYYY-MM') AS selling_month,
 COUNT(DISTINCT s.customer_id) AS total_customers,
-ROUND(SUM(p.price * s.quantity),0) AS income
+floor(SUM(p.price * s.quantity)) AS income
 FROM sales s
 JOIN products p ON s.product_id = p.product_id  
 GROUP BY TO_CHAR(s.sale_date, 'YYYY-MM')
