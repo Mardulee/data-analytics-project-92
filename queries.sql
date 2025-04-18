@@ -66,29 +66,20 @@ ORDER BY selling_month ASC;
 -- проект 1_задание 6_часть 2 : Запрос выводит месяцы продаж с кол-вом уникальных покупателей и округленной общей выручкой от них
 
 
-WITH tab1 AS
-    (
-    SELECT CONCAT(c.first_name, ' ', c.last_name) AS customer, min(sale_date) AS sale_date, 
-    sum(price * quantity) AS income
-    FROM customers c 
-    JOIN sales s ON c.customer_id = s.customer_id
-    JOIN products p ON s.product_id = p.product_id
-    GROUP BY CONCAT(c.first_name, ' ', c.last_name)
-    HAVING sum(price * quantity) = 0
-    ), 
-    tab2 AS 
-    (
-    SELECT CONCAT(c.first_name, ' ', c.last_name) AS customer, min(sale_date) AS sale_date, 
-    CONCAT(e.first_name, ' ', e.last_name) AS seller
+WITH ranking AS (
+    SELECT
+        CONCAT(c.first_name, ' ', c.last_name) AS customer, 
+        s.sale_date,
+        CONCAT(e.first_name, ' ', e.last_name) AS seller,
+        ROW_NUMBER() OVER (PARTITION BY c.customer_id ORDER BY s.sale_date ASC) AS rn
     FROM sales s
-    JOIN customers c ON s.customer_id = c.customer_id
-    JOIN employees e  ON e.employee_id = s.sales_person_id
-    GROUP BY CONCAT(c.first_name, ' ', c.last_name), 
-             CONCAT(e.first_name, ' ', e.last_name)
-    )
-    SELECT tab1.customer, tab1.sale_date, tab2.seller
-    FROM tab1
-    INNER JOIN tab2 ON tab1.customer = tab2.customer AND tab1.sale_date = tab2.sale_date
-    GROUP BY tab1.customer, tab1.sale_date, tab2.seller
-    ORDER BY customer;
+    JOIN customers c ON c.customer_id = s.customer_id
+    JOIN employees e ON s.sales_person_id = e.employee_id 
+    JOIN products p ON s.product_id = p.product_id  
+    WHERE p.price = 0
+)
+SELECT customer, sale_date, seller
+FROM ranking
+WHERE rn = 1
+ORDER BY customer;
 -- проект 1_задание 6_часть 3 : Подзапрос 1 выводит сконкатенированную строку с именем и фамилией покупателя, его датой первой покупки с суммой затрат, при этом сумма затрат = 0. Подзапрос 2 выводит сконкатенированную строку с именем и фамилией покупателя, его датой первой покупки и сконкатенированную строку с именем и фамилией продавца. Итоговый запрос выводит ФИ покупателя, дату первой покупки и ФИ продавца с сортировкой по покупателю.
